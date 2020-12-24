@@ -27,7 +27,7 @@ namespace Comet
 			get => GetPropertyFromContext<List<Gesture>>();
 			internal set => SetPropertyInContext(value);
 		}
-
+		public IReloadHandler ReloadHandler { get; set; }
 		WeakReference parent;
 
 		public string Id { get; } = IDGenerator.Instance.Next;
@@ -123,6 +123,7 @@ namespace Comet
 			}
 			var oldView = view.ViewHandler;
 			this.Gestures = view.Gestures;
+			this.ReloadHandler = view.ReloadHandler;
 			view.ViewHandler = null;
 			view.replacedView?.Dispose();
 			this.ViewHandler = oldView;
@@ -154,6 +155,7 @@ namespace Comet
 				oldParentView?.Dispose();
 				animations?.ForEach(x => x.Dispose());
 				ViewHandler?.SetView(view);
+				ReloadHandler?.Reload();
 			}
 			finally
 			{
@@ -190,8 +192,10 @@ namespace Comet
 			if (replaced != this)
 			{
 				replaced.viewThatWasReplaced = this;
+				replaced.ViewHandler = ViewHandler; 
 				replaced.Navigation = this.Navigation;
 				replaced.Parent = this;
+				replaced.ReloadHandler = this.ReloadHandler;
 				replaced.PopulateFromEnvironment();
 
 				replacedView = replaced;
@@ -216,7 +220,7 @@ namespace Comet
 					State.AddGlobalProperties(props);
 				}
 				UpdateBuiltViewContext(view);
-				return builtView = view;
+				return builtView = view.GetRenderView();
 			}
 		}
 
